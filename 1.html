@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>English Vocabulary Explorer - Live Word & Audio Sync</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Fredoka & Outfit for engaging educational design -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Canvas Confetti for celebrations -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Fredoka', cursive, sans-serif;
+      background: radial-gradient(circle at 10% 10%, #fdf4ff 0%, #eff6ff 40%, #ecfdf5 75%, #fffbeb 100%);
+      min-height: 100vh;
+      user-select: none;
+    }
+
+    .font-heading {
+      font-family: 'Outfit', sans-serif;
+    }
+
+    /* Karaoke Synchronized Highlight */
+    .word-highlight-active {
+      transform: scale(1.12);
+      background: linear-gradient(135deg, #fef08a, #fde047) !important;
+      color: #713f12 !important;
+      box-shadow: 0 0 28px rgba(250, 204, 21, 0.8), 0 0 10px rgba(234, 179, 8, 0.6);
+      border-color: #eab308 !important;
+      transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* Sound waveform animation */
+    .sound-bars-wave {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      height: 22px;
+    }
+    .sound-bar {
+      width: 3.5px;
+      background-color: #6366f1;
+      border-radius: 9999px;
+      animation: soundDance 0.8s ease-in-out infinite;
+    }
+    .sound-bar:nth-child(2) { animation-delay: 0.15s; }
+    .sound-bar:nth-child(3) { animation-delay: 0.3s; }
+    .sound-bar:nth-child(4) { animation-delay: 0.45s; }
+    
+    @keyframes soundDance {
+      0%, 100% { height: 6px; }
+      50% { height: 22px; }
+    }
+
+    /* Smooth scale bounce */
+    .btn-bounce {
+      transition: transform 0.15s ease;
+    }
+    .btn-bounce:active {
+      transform: scale(0.94);
+    }
+
+    /* Shake animation on wrong answer */
+    @keyframes shakeSoft {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+    .shake-anim {
+      animation: shakeSoft 0.45s ease-in-out;
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased p-3 sm:p-6 overflow-x-hidden">
+
+  <!-- Top Application Header -->
+  <header class="max-w-6xl mx-auto mb-6">
+    <div class="bg-white/95 backdrop-blur-md rounded-3xl p-4 sm:p-6 shadow-xl border border-white/80 flex flex-col md:flex-row items-center justify-between gap-4">
+      
+      <!-- Brand & Title -->
+      <div class="flex items-center gap-4 text-center md:text-left">
+        <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-400 via-orange-500 to-rose-500 flex items-center justify-center text-3xl shadow-lg shadow-orange-300/40 text-white transform hover:rotate-6 transition-transform cursor-pointer" onclick="audioSynth.playPop()">
+          🦁
+        </div>
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-heading font-black text-slate-800 tracking-tight flex items-center justify-center md:justify-start flex-wrap gap-2.5">
+            English Word Studio
+            <span class="text-xs bg-rose-50 text-rose-700 font-bold px-3 py-1 rounded-full border border-rose-200 flex items-center gap-1.5 shadow-sm">
+              🇬🇧 British Accent (Female)
+            </span>
+            <span class="text-xs bg-indigo-100 text-indigo-700 font-semibold px-3 py-1 rounded-full border border-indigo-200">
+              Live Sound Sync 🎙️
+            </span>
+          </h1>
+          <p class="text-sm sm:text-base text-slate-500 font-medium">Listen to authentic British pronunciation with real-time word highlight</p>
+        </div>
+      </div>
+
+      <!-- Controls & Score -->
+      <div class="flex items-center flex-wrap justify-center gap-3">
+        <!-- Stars / Score Counter -->
+        <div class="flex items-center gap-2.5 bg-amber-50 border-2 border-amber-300 px-4 py-2 rounded-2xl shadow-sm">
+          <span class="text-2xl animate-bounce">⭐</span>
+          <div>
+            <div class="text-[10px] text-amber-700 font-bold uppercase tracking-wider">Score</div>
+            <div id="scoreDisplay" class="text-xl font-heading font-black text-amber-900 leading-none">0</div>
+          </div>
+        </div>
+
+        <!-- Speech Speed Switcher -->
+        <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-2xl">
+          <span class="text-xs font-bold text-slate-500">Speed:</span>
+          <select id="speechRateSelect" class="bg-white border border-slate-300 text-xs rounded-xl px-2 py-1 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer">
+            <option value="0.75">🐢 Slow</option>
+            <option value="0.95" selected>⚡ Normal</option>
+            <option value="1.15">🚀 Fast</option>
+          </select>
+        </div>
+
+        <!-- British Voice Tester Button -->
+        <button onclick="testBritishVoice()" class="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 text-xs font-bold transition shadow-sm btn-bounce" title="Hear a British Voice Sample">
+          <span>🇬🇧</span>
+          <span>Sample</span>
+        </button>
+
+        <!-- SFX Toggle -->
+        <button id="sfxToggleBtn" class="p-2.5 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 transition shadow-sm btn-bounce" title="Toggle Sound Effects">
+          <span id="sfxIcon" class="text-xl">🔔</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="flex items-center justify-center gap-2 sm:gap-3 mt-4 overflow-x-auto py-2">
+      <button onclick="switchTab('explore')" id="tab-explore" class="tab-btn px-4 sm:px-6 py-2.5 rounded-2xl font-bold text-sm sm:text-base transition-all duration-200 bg-indigo-600 text-white shadow-lg shadow-indigo-300/50 flex items-center gap-2 btn-bounce">
+        <span>🎧</span> <span>Explore & Sync</span>
+      </button>
+      <button onclick="switchTab('quiz')" id="tab-quiz" class="tab-btn px-4 sm:px-6 py-2.5 rounded-2xl font-bold text-sm sm:text-base transition-all duration-200 bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 flex items-center gap-2 btn-bounce">
+        <span>🎯</span> <span>Listening Quiz</span>
+      </button>
+      <button onclick="switchTab('match')" id="tab-match" class="tab-btn px-4 sm:px-6 py-2.5 rounded-2xl font-bold text-sm sm:text-base transition-all duration-200 bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 flex items-center gap-2 btn-bounce">
+        <span>🔗</span> <span>Word Match</span>
+      </button>
+      <button onclick="switchTab('spelling')" id="tab-spelling" class="tab-btn px-4 sm:px-6 py-2.5 rounded-2xl font-bold text-sm sm:text-base transition-all duration-200 bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 flex items-center gap-2 btn-bounce">
+        <span>🔤</span> <span>Spelling Bee</span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- Main Activities Workspace -->
+  <main class="max-w-6xl mx-auto">
+
+    <!-- ==================== TAB 1: EXPLORE & SOUND SYNC ==================== -->
+    <section id="view-explore" class="tab-view block space-y-6">
+      
+      <!-- Interactive Guide Banner -->
+      <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white p-5 rounded-3xl shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-4 text-center sm:text-left">
+          <div class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-3xl shadow-inner backdrop-blur-sm shrink-0">
+            💡
+          </div>
+          <div>
+            <h2 class="text-xl font-heading font-black">Click any card to trigger live sound-word synchronization!</h2>
+            <p class="text-white/85 text-sm mt-0.5">The word lights up in glowing gold while being pronounced to build instant phonetic memory.</p>
+          </div>
+        </div>
+        <button onclick="playAllWordsSequentially()" id="playAllBtn" class="bg-amber-400 hover:bg-amber-300 text-amber-950 font-heading font-black px-5 py-3 rounded-2xl shadow-lg transition-transform btn-bounce flex items-center gap-2 shrink-0">
+          <span>▶️ Autoplay All Words</span>
+        </button>
+      </div>
+
+      <!-- Vocabulary Grid -->
+      <div id="cardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        <!-- Injected via JavaScript -->
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: LISTENING QUIZ ==================== -->
+    <section id="view-quiz" class="tab-view hidden space-y-6">
+      <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-100 max-w-3xl mx-auto text-center">
+        
+        <!-- Quiz Header -->
+        <div class="flex items-center justify-between border-b pb-4 mb-6">
+          <span class="text-sm font-bold text-slate-400">Question <span id="quizQuestionNum" class="text-indigo-600 font-black text-lg">1</span> of <span id="quizTotalQuestions">7</span></span>
+          <div class="flex items-center gap-2">
+            <span class="text-xs bg-rose-100 text-rose-700 font-black px-3 py-1 rounded-full" id="quizStreakBadge">🔥 Streak: 0</span>
+          </div>
+        </div>
+
+        <!-- Speaker Centerpiece -->
+        <div class="mb-8">
+          <button id="repeatQuizAudioBtn" onclick="repeatQuizAudio()" class="mx-auto w-24 h-24 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-xl shadow-indigo-300/60 flex items-center justify-center text-4xl hover:scale-105 btn-bounce relative group" title="Click to hear word again">
+            <span class="group-hover:animate-ping absolute inset-0 rounded-full bg-indigo-400 opacity-20"></span>
+            🔊
+          </button>
+          <div class="mt-4">
+            <p class="text-slate-500 text-sm font-medium">Listen carefully, then choose the matching picture:</p>
+            <div id="quizPromptDisplay" class="mt-2 text-2xl font-black text-slate-800 tracking-wide min-h-[42px] flex items-center justify-center">
+              <!-- Prompt Word injected with sync highlighting -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 4 Image Choice Options -->
+        <div id="quizOptionsGrid" class="grid grid-cols-2 gap-4 max-w-xl mx-auto">
+          <!-- Quiz options injected dynamically -->
+        </div>
+
+        <!-- Quiz Feedback banner -->
+        <div id="quizFeedback" class="mt-6 min-h-[36px] text-lg font-bold transition-all"></div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: MATCHING GAME ==================== -->
+    <section id="view-match" class="tab-view hidden space-y-6">
+      <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-100 max-w-4xl mx-auto">
+        
+        <div class="flex flex-col sm:flex-row items-center justify-between pb-4 mb-6 border-b gap-3">
+          <div class="text-center sm:text-left">
+            <h2 class="text-xl font-heading font-black text-slate-800">Match the Words with Their Pictures</h2>
+            <p class="text-sm text-slate-500">Tap an English word to hear it pronounced, then tap its matching picture</p>
+          </div>
+          <button onclick="resetMatchGame()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition btn-bounce">
+            🔄 Shuffle
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          <!-- Column 1: Words -->
+          <div class="space-y-3" id="matchWordsCol">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Word Cards (Tap to Listen)</h3>
+            <!-- Injected -->
+          </div>
+
+          <!-- Column 2: Images -->
+          <div class="space-y-3" id="matchImagesCol">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Picture Cards</h3>
+            <!-- Injected -->
+          </div>
+        </div>
+
+        <!-- Complete Victory Card -->
+        <div id="matchSummary" class="mt-8 text-center hidden">
+          <div class="p-6 bg-emerald-50 rounded-2xl border-2 border-emerald-300">
+            <span class="text-4xl block mb-2">🎉</span>
+            <h3 class="text-2xl font-black text-emerald-900 font-heading">Outstanding! All Pairs Matched!</h3>
+            <p class="text-sm text-emerald-700 mt-1">You built strong direct connections between the words and pictures.</p>
+            <button onclick="resetMatchGame()" class="mt-4 px-6 py-2.5 bg-emerald-600 text-white font-bold rounded-xl shadow-md hover:bg-emerald-700 transition btn-bounce">
+              Play Again 🔄
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: SPELLING BEE ==================== -->
+    <section id="view-spelling" class="tab-view hidden space-y-6">
+      <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-100 max-w-3xl mx-auto text-center">
+        
+        <div class="flex items-center justify-between border-b pb-4 mb-6">
+          <h2 class="text-xl font-heading font-black text-slate-800">Spelling Workshop 🔤</h2>
+          <span class="text-xs font-bold bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full border border-indigo-200">
+            Letter Order Practice
+          </span>
+        </div>
+
+        <!-- Target Image & Voice Button -->
+        <div class="flex flex-col items-center justify-center mb-6">
+          <div id="spellingImageContainer" class="w-36 h-36 bg-amber-50 rounded-3xl p-3 border-2 border-amber-200 shadow-md flex items-center justify-center mb-3">
+            <!-- Target SVG will appear here -->
+          </div>
+          <button onclick="speakSpellingTarget()" class="flex items-center gap-2 bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 px-5 py-2.5 rounded-2xl font-bold text-sm transition btn-bounce">
+            <span>🔊 Pronounce Word</span>
+          </button>
+        </div>
+
+        <!-- Letter Target Slots -->
+        <div class="mb-8">
+          <div class="text-xs text-slate-400 font-bold mb-3 uppercase tracking-wider">Word in Progress:</div>
+          <div id="spellingSlotsContainer" class="flex items-center justify-center gap-2 flex-wrap min-h-[64px] p-2.5 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
+            <!-- Empty letter slots injected here -->
+          </div>
+        </div>
+
+        <!-- Letter Pool (Scrambled) -->
+        <div class="mb-6">
+          <div class="text-xs text-slate-400 font-bold mb-3 uppercase tracking-wider">Tap Letters in Correct Order:</div>
+          <div id="spellingLetterPool" class="flex items-center justify-center gap-2.5 flex-wrap min-h-[64px]">
+            <!-- Scrambled letter buttons injected here -->
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-center gap-3 pt-4 border-t">
+          <button onclick="resetCurrentSpelling()" class="px-4 py-2.5 text-slate-600 bg-slate-100 hover:bg-slate-200 font-bold rounded-xl text-sm transition btn-bounce">
+            Reset Letters
+          </button>
+          <button onclick="nextSpellingWord()" class="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-md hover:opacity-95 transition btn-bounce">
+            Next Word ➡️
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Interactive Toast Notification -->
+  <div id="toastNotification" class="fixed bottom-6 right-6 transform translate-y-32 opacity-0 transition-all duration-300 z-50 bg-slate-900/95 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/20">
+    <span id="toastIcon" class="text-2xl">✨</span>
+    <span id="toastMsg" class="font-bold text-sm">Great job!</span>
+  </div>
+
+  <script>
+    // Vocabulary items exactly matching the sheet (English Only, No Arabic)
+    const VOCABULARY = [
+      {
+        id: "lion",
+        word: "lion",
+        phonics: ["li", "on"],
+        category: "Animals",
+        funFact: "A brave, majestic wild big cat with a proud golden mane.",
+        svg: `
+          <svg viewBox="0 0 160 160" class="w-full h-full drop-shadow-md">
+            <!-- Lion Mane Outer -->
+            <path d="M80 15 C105 15, 125 30, 138 52 C150 75, 145 105, 130 125 C115 142, 95 148, 80 148 C65 148, 45 142, 30 125 C15 105, 10 75, 22 52 C35 30, 55 15, 80 15 Z" fill="#d97706" />
+            <path d="M80 20 C102 20, 120 33, 132 54 C142 74, 138 100, 125 118 C112 133, 95 140, 80 140 C65 140, 48 133, 35 118 C22 100, 18 74, 28 54 C40 33, 58 20, 80 20 Z" fill="#f59e0b" />
+            <!-- Ears -->
+            <circle cx="48" cy="46" r="14" fill="#d97706" />
+            <circle cx="48" cy="46" r="8" fill="#fef3c7" />
+            <circle cx="112" cy="46" r="14" fill="#d97706" />
+            <circle cx="112" cy="46" r="8" fill="#fef3c7" />
+            <!-- Lion Head -->
+            <ellipse cx="80" cy="82" rx="42" ry="38" fill="#fde68a" />
+            <!-- Eyes -->
+            <circle cx="64" cy="74" r="7" fill="#1e293b" />
+            <circle cx="62" cy="72" r="2.5" fill="#ffffff" />
+            <circle cx="96" cy="74" r="7" fill="#1e293b" />
+            <circle cx="94" cy="72" r="2.5" fill="#ffffff" />
+            <!-- Nose & Muzzle -->
+            <ellipse cx="80" cy="94" rx="20" ry="12" fill="#fffbeb" />
+            <path d="M74 86 L86 86 L80 94 Z" fill="#b45309" />
+            <path d="M80 94 L80 100 M75 100 C78 102, 82 102, 85 100" stroke="#78350f" stroke-width="2" stroke-linecap="round" fill="none" />
+            <!-- Open Happy Mouth -->
+            <path d="M76 100 Q80 106 84 100 Z" fill="#ef4444" />
+            <!-- Cheeks -->
+            <circle cx="56" cy="85" r="5" fill="#fca5a5" opacity="0.6" />
+            <circle cx="104" cy="85" r="5" fill="#fca5a5" opacity="0.6" />
+          </svg>
+        `
+      },
+      {
+        id: "snail",
+        word: "snail",
+        phonics: ["sn", "ail"],
+        category: "Animals",
+        funFact: "A gentle creature carrying a spiral shell home on its back.",
+        svg: `
+          <svg viewBox="0 0 160 160" class="w-full h-full drop-shadow-md">
+            <!-- Antennae -->
+            <path d="M48 60 Q42 40 38 32" stroke="#fcd34d" stroke-width="5" stroke-linecap="round" fill="none" />
+            <circle cx="38" cy="32" r="6" fill="#f59e0b" />
+            <path d="M60 60 Q66 40 70 32" stroke="#fcd34d" stroke-width="5" stroke-linecap="round" fill="none" />
+            <circle cx="70" cy="32" r="6" fill="#f59e0b" />
+            <!-- Snail Body -->
+            <path d="M26 128 C22 118, 30 75, 54 64 C70 56, 75 75, 76 90 L136 128 C144 133, 138 138, 126 138 L38 138 C28 138, 24 134, 26 128 Z" fill="#fde68a" />
+            <!-- Face -->
+            <circle cx="48" cy="62" r="4" fill="#1e293b" />
+            <circle cx="47" cy="60" r="1.5" fill="#ffffff" />
+            <path d="M42 74 Q48 80 54 75" stroke="#b45309" stroke-width="2.5" stroke-linecap="round" fill="none" />
+            <circle cx="40" cy="71" r="3.5" fill="#f87171" opacity="0.7" />
+            <!-- Spiral Shell -->
+            <circle cx="100" cy="94" rx="36" ry="34" fill="#fb923c" />
+            <ellipse cx="100" cy="94" rx="28" ry="26" fill="#f97316" />
+            <ellipse cx="100" cy="94" rx="20" ry="18" fill="#ea580c" />
+            <path d="M100 94 Q106 88 108 94 Q110 102 102 104 Q90 106 88 94 Q86 80 102 78 Q118 76 120 96" fill="none" stroke="#fed7aa" stroke-width="4.5" stroke-linecap="round" />
+          </svg>
+        `
+      },
+      {
+        id: "tired",
+        word: "tired",
+        phonics: ["ti", "red"],
+        category: "Feelings",
+        funFact: "Feeling low on energy and needing a peaceful, restful sleep.",
+        svg: `
+          <svg viewBox="0 0 160 160" class="w-full h-full drop-shadow-md">
+            <!-- Empty Battery Indicator overhead -->
+            <rect x="62" y="16" width="36" height="18" rx="4" fill="#ffffff" stroke="#ef4444" stroke-width="2.5" />
+            <rect x="98" y="21" width="4" height="8" rx="1.5" fill="#ef4444" />
+            <rect x="65" y="19" width="8" height="12" rx="2" fill="#ef4444" />
+            <!-- Exhaustion Sweat drops -->
+            <path d="M42 32 Q44 26 46 32 Q48 38 42 38 Z" fill="#38bdf8" />
+            <path d="M116 34 Q118 28 120 34 Q122 40 116 40 Z" fill="#38bdf8" />
+            <!-- Body -->
+            <path d="M40 145 C42 120, 60 110, 80 110 C100 110, 118 120, 120 145 Z" fill="#475569" />
+            <!-- Head -->
+            <ellipse cx="80" cy="78" rx="30" ry="34" fill="#fed7aa" />
+            <!-- Messy Hair -->
+            <path d="M50 72 C48 50, 60 40, 80 40 C100 40, 112 50, 110 72 C105 60, 95 56, 80 58 C65 56, 55 62, 50 72 Z" fill="#334155" />
+            <!-- Droopy Eyes -->
+            <path d="M64 74 Q70 71 76 76" stroke="#475569" stroke-width="3" stroke-linecap="round" fill="none" />
+            <path d="M84 76 Q90 71 96 74" stroke="#475569" stroke-width="3" stroke-linecap="round" fill="none" />
+            <!-- Dark Under-eye Circles -->
+            <path d="M64 80 Q70 85 76 81" stroke="#94a3b8" stroke-width="2" fill="none" opacity="0.7" />
+            <path d="M84 81 Q90 85 96 80" stroke="#94a3b8" stroke-width="2" fill="none" opacity="0.7" />
+            <!-- Weary Mouth -->
+            <path d="M74 98 Q80 93 86 98" stroke="#7c2d12" stroke-width="2.5" stroke-linecap="round" fill="none" />
+            <!-- Hands on Temples -->
+            <path d="M44 95 C46 80, 56 68, 62 66 C65 72, 60 84, 52 98 Z" fill="#fbcfe8" />
+            <path d="M116 95 C114 80, 104 68, 98 66 C95 72, 100 84, 108 98 Z" fill="#fbcfe8" />
+          </svg>
+        `
+      },
+      {
+        id: "comic_book",
+        word: "comic book",
+        phonics: ["com", "ic", "book"],
+        category: "Objects",
+        funFact: "An illustrated book bursting with adventures and colorful panels.",
+        svg: `
+          <svg viewBox="0 0 160 160" class="w-full h-full drop-shadow-md">
+            <!-- Book Spine Base -->
+            <path d="M22 128 L76 138 L80 50 L26 40 Z" fill="#0284c7" />
+            <path d="M138 128 L84 138 L80 50 L134 40 Z" fill="#0369a1" />
+            <!-- Open Pages -->
+            <path d="M26 124 C45 120, 68 126, 78 132 L78 46 C66 40, 45 36, 26 42 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5" />
+            <path d="M134 124 C115 120, 92 126, 82 132 L82 46 C94 40, 115 36, 134 42 Z" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5" />
+            <line x1="80" y1="44" x2="80" y2="134" stroke="#cbd5e1" stroke-width="3" stroke-linecap="round" />
+            <!-- Left Comic Panels -->
+            <rect x="33" y="50" width="38" height="32" rx="3" fill="#f1f5f9" stroke="#0f172a" stroke-width="1.8" />
+            <!-- Speech Bubble -->
+            <ellipse cx="52" cy="62" rx="11" ry="7" fill="#fef08a" stroke="#0f172a" stroke-width="1.5" />
+            <path d="M52 69 L48 74 L55 68 Z" fill="#fef08a" stroke="#0f172a" stroke-width="1.2" />
+            <text x="46" y="65" font-size="7" font-weight="bold" fill="#0f172a">Hi!</text>
+            <!-- Panel 2 -->
+            <rect x="33" y="87" width="38" height="30" rx="3" fill="#e0f2fe" stroke="#0f172a" stroke-width="1.8" />
+            <!-- Right Comic Panel -->
+            <rect x="89" y="50" width="38" height="67" rx="3" fill="#fef9c3" stroke="#0f172a" stroke-width="1.8" />
+            <circle cx="108" cy="74" r="10" fill="#f87171" stroke="#0f172a" stroke-width="1.5" />
+            <!-- Action Starburst -->
+            <path d="M108 94 L111 100 L118 100 L113 104 L115 111 L108 107 L102 111 L104 104 L99 100 L106 100 Z" fill="#facc15" stroke="#ca8a04" stroke-width="1" />
+          </svg>
+        `
+      },
+      {
+        id: "tall",
+        word: "tall",
+        phonics: ["ta", "ll"],
+        category: "Descriptions",
+        funFact: "Having great height, soaring upwards just like a giraffe.",
+        svg: `
+          <svg viewBox="0 0 160 160" class="w-full h-full drop-shadow-md">
+            <!-- Measurement Ruler beside Giraffe -->
+            <rect x="36" y="22" width="16" height="120" rx="2" fill="#f8fafc" stroke="#64748b" stroke-width="2" />
+            <line x1="36" y1="35" x2="48" y2="35" stroke="#334155" stroke-width="2" />
+            <line x1="36" y1="55" x2="48" y2="55" stroke="#334155" stroke-width="2" />
+            <line x1="36" y1="75" x2="48" y2="75" stroke="#334155" stroke-width="2" />
+            <line x1="36" y1="95" x2="48" y2="95" stroke="#334155" stroke-width="2" />
+            <line x1="36" y1="115" x2="48" y2="115" stroke="#334155" stroke-width="2" />
+            <line x1="36" y1="135" x2="48" y2="135" stroke="#334155" stroke-width="2" />
+            <!-- Tick lines -->
+            <line x1="36" y1="45" x2="43" y2="45" stroke="#94a3b8" stroke-width="1.5" />
+            <line x1="36" y1="65" x2="43" y2="65" stroke="#94a3b8" stroke-width="1.5" />
+            <line x1="36" y1="85" x2="43" y2="85" stroke="#94a3b8" stroke-width="1.5" />
+            <line x1="36" y1="105" x2="43" y2="105" stroke="#94a3b8" stroke-width="1.5" />
+            <line x1="36" y1="125" x2="43" y2="125" stroke="#94a3b8" stroke-width="1.5" />
+            <!-- Height Up Arrow -->
+            <path d="M26 65 L26 30 M20 36 L26 28 L32 36" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+            <!-- Giraffe Horns -->
+            <line x1="97" y1="28" x2="95" y2="20" stroke="#d97706" stroke-width="3" stroke-linecap="round" />
+            <circle cx="95" cy="19" r="3.5" fill="#78350f" />
+            <line x1="107" y1="28" x2="109" y2="20" stroke="#d97706" stroke-width="3" stroke-linecap="round" />
+            <circle cx="109" cy="19" r="3.5" fill="#78350f" />
+            <!-- Giraffe Head -->
+            <ellipse cx="102" cy="35" rx="14" ry="12" fill="#fbbf24" />
+            <circle cx="97" cy="33" r="3" fill="#1e293b" />
+            <ellipse cx="102" cy="41" rx="8" ry="5" fill="#fef3c7" />
+            <!-- Long Slender Neck -->
+            <path d="M96 44 L92 125 L114 125 L108 44 Z" fill="#fbbf24" />
+            <!-- Spots along neck -->
+            <ellipse cx="100" cy="56" rx="4" ry="5" fill="#b45309" />
+            <ellipse cx="105" cy="74" rx="5" ry="6" fill="#b45309" />
+            <ellipse cx="98" cy="92" rx="4.5" ry="5" fill="#b45309" />
+            <ellipse cx="106" cy="110" rx="6" ry="5" fill="#b45309" />
+            <!-- Legs -->
+            <rect x="88" y="125" width="28" height="18" rx="4" fill="#f59e0b" />
+            <rect x="91" y="140" width="5" height="10" fill="#b45309" />
+            <rect x="110" y="140" width="5" height="10" fill="#b45309" />
+          </svg>
+        `
+      },
+      {
+        id: "rainbow",
+        word: "rainbow",
+        phonics: ["rain", "bow"],
+        category: "Nature",
+        funFact: "A vibrant multicolored arc formed in the sky by sunlight and rain.",
+        svg: `
+          <svg viewBox="0 0 160 160" class="w-full h-full drop-shadow-md">
+            <!-- Rainbow concentric arches -->
+            <path d="M25 105 A55 55 0 0 1 135 105" fill="none" stroke="#ef4444" stroke-width="8" stroke-linecap="round" />
+            <path d="M31 105 A48 48 0 0 1 129 105" fill="none" stroke="#f97316" stroke-width="7" stroke-linecap="round" />
+            <path d="M37 105 A41 41 0 0 1 123 105" fill="none" stroke="#facc15" stroke-width="7" stroke-linecap="round" />
+            <path d="M43 105 A34 34 0 0 1 117 105" fill="none" stroke="#22c55e" stroke-width="7" stroke-linecap="round" />
+            <path d="M49 105 A27 27 0 0 1 111 105" fill="none" stroke="#3b82f6" stroke-width="7" stroke-linecap="round" />
+            <path d="M55 105 A20 20 0 0 1 105 105" fill="none" stroke="#8b5cf6" stroke-width="7" stroke-linecap="round" />
+            <!-- Left Fluffy Cloud -->
+            <g fill="#e0f2fe" stroke="#bae6fd" stroke-width="1.5">
+              <circle cx="28" cy="115" r="14" />
+              <circle cx="44" cy="112" r="18" />
+              <circle cx="58" cy="118" r="13" />
+              <rect x="25" y="118" width="38" height="12" fill="#e0f2fe" stroke="none" />
+            </g>
+            <!-- Right Fluffy Cloud -->
+            <g fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5">
+              <circle cx="104" cy="118" r="13" />
+              <circle cx="120" cy="112" r="18" />
+              <circle cx="136" cy="115" r="14" />
+              <rect x="104" y="118" width="38" height="12" fill="#f8fafc" stroke="none" />
+            </g>
+          </svg>
+        `
+      },
+      {
+        id: "mountain",
+        word: "mountain",
+        phonics: ["moun", "tain"],
+        category: "Nature",
+        funFact: "A towering natural elevation of earth and rock with snowy peaks.",
+        svg: `
+          <svg viewBox="0 0 160 160" class="w-full h-full drop-shadow-md">
+            <!-- Background Peak -->
+            <polygon points="40,135 90,48 140,135" fill="#334155" />
+            <polygon points="90,48 78,72 88,68 90,75 96,69 102,74" fill="#f1f5f9" />
+            <!-- Foreground Peak Left -->
+            <polygon points="15,135 60,65 105,135" fill="#1e293b" />
+            <polygon points="60,65 48,88 56,84 62,90 68,83 74,89" fill="#f8fafc" />
+            <!-- Foreground Peak Center/Right -->
+            <polygon points="65,135 110,60 155,135" fill="#0f172a" />
+            <polygon points="110,60 98,82 106,78 112,85 118,79 124,84" fill="#ffffff" />
+            <!-- Snow ridge lines -->
+            <line x1="60" y1="88" x2="60" y2="135" stroke="#475569" stroke-width="2.5" />
+            <line x1="110" y1="84" x2="114" y2="135" stroke="#334155" stroke-width="2.5" />
+            <!-- Base Shadow -->
+            <rect x="10" y="132" width="140" height="6" rx="3" fill="#0f172a" opacity="0.3" />
+          </svg>
+        `
+      }
+    ];
+
+    // Zero-dependency Web Audio Synthesizer for instant feedback sounds
+    class SoundSynth {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) this.ctx = new AudioContext();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+      playTone(freq, type = 'sine', duration = 0.15, gainVal = 0.15) {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch(e) {
+          console.warn("Audio context warning:", e);
+        }
+      }
+      playCorrect() {
+        this.playTone(523.25, 'triangle', 0.12, 0.2); // C5
+        setTimeout(() => this.playTone(659.25, 'triangle', 0.15, 0.2), 100); // E5
+        setTimeout(() => this.playTone(783.99, 'triangle', 0.22, 0.25), 210); // G5
+        setTimeout(() => this.playTone(1046.50, 'triangle', 0.32, 0.22), 330); // C6
+      }
+      playWrong() {
+        this.playTone(310.0, 'sawtooth', 0.18, 0.18);
+        setTimeout(() => this.playTone(270.0, 'sawtooth', 0.25, 0.18), 150);
+      }
+      playClick() {
+        this.playTone(750, 'sine', 0.05, 0.08);
+      }
+      playPop() {
+        this.playTone(480, 'sine', 0.08, 0.12);
+      }
+    }
+    const audioSynth = new SoundSynth();
+
+    // British Female Speech Synthesis Engine with precise callback synchronization
+    const speechEngine = {
+      voices: [],
+      activeVoiceName: '',
+      init() {
+        if ('speechSynthesis' in window) {
+          const loadVoices = () => {
+            this.voices = window.speechSynthesis.getVoices();
+            const voice = this.getBritishFemaleVoice();
+            if (voice) this.activeVoiceName = voice.name;
+          };
+          loadVoices();
+          if (window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+          }
+        }
+      },
+      getBritishFemaleVoice() {
+        if (!this.voices || this.voices.length === 0) {
+          this.voices = window.speechSynthesis.getVoices();
+        }
+
+        // Filter British English (UK) voices
+        const gbVoices = this.voices.filter(v => 
+          v.lang === 'en-GB' || 
+          v.lang === 'en_GB' || 
+          v.lang.toLowerCase().startsWith('en-gb')
+        );
+
+        // Keywords for female speech engines across Chrome, Safari, Edge, Windows, iOS, and Android
+        const femaleKeywords = [
+          'female', 'hazel', 'susan', 'serena', 'sonia', 'libby', 'fiona', 
+          'kate', 'victoria', 'martha', 'alice', 'amy', 'olivia', 'stephanie', 
+          'mia', 'emma', 'clara', 'natural'
+        ];
+
+        // 1. Prioritize explicit UK female voices
+        const explicitFemaleGb = gbVoices.find(v => {
+          const name = v.name.toLowerCase();
+          return femaleKeywords.some(k => name.includes(k));
+        });
+        if (explicitFemaleGb) return explicitFemaleGb;
+
+        // 2. Prioritize common browser default British female voices
+        const googleUkFemale = gbVoices.find(v => v.name.includes('Google UK English Female'));
+        if (googleUkFemale) return googleUkFemale;
+
+        // 3. Fallback to any en-GB voice that does not contain male identifiers
+        const maleNames = ['male', 'george', 'david', 'oliver', 'daniel', 'richard', 'brian'];
+        const nonMaleGbVoice = gbVoices.find(v => {
+          const name = v.name.toLowerCase();
+          return !maleNames.some(m => name.includes(m));
+        });
+        if (nonMaleGbVoice) return nonMaleGbVoice;
+
+        // 4. Any en-GB voice available on the device
+        if (gbVoices.length > 0) return gbVoices[0];
+
+        // 5. Commonwealth female fallback (en-IE, en-AU, en-NZ)
+        const commonwealthFemale = this.voices.find(v => 
+          (v.lang.startsWith('en-IE') || v.lang.startsWith('en-AU') || v.lang.startsWith('en-NZ')) &&
+          femaleKeywords.some(k => v.name.toLowerCase().includes(k))
+        );
+        if (commonwealthFemale) return commonwealthFemale;
+
+        // 6. Generic female English fallback
+        const anyFemale = this.voices.find(v => 
+          v.lang.startsWith('en') && 
+          femaleKeywords.some(k => v.name.toLowerCase().includes(k))
+        );
+        if (anyFemale) return anyFemale;
+
+        return this.voices.find(v => v.lang.startsWith('en')) || null;
+      },
+      speak({ text, onStart, onEnd }) {
+        if (!('speechSynthesis' in window)) {
+          showToast("Browser does not support direct voice synthesis", "⚠️");
+          if (onStart) onStart();
+          setTimeout(() => { if (onEnd) onEnd(); }, 1000);
+          return;
+        }
+
+        window.speechSynthesis.cancel(); // Stop prior speech
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        const rateSelect = document.getElementById('speechRateSelect');
+        const rate = rateSelect ? parseFloat(rateSelect.value) : 0.95;
+        utterance.rate = rate;
+        utterance.lang = 'en-GB'; // British English
+        utterance.pitch = 1.08;   // Natural, clear feminine pitch contour
+
+        const voice = this.getBritishFemaleVoice();
+        if (voice) {
+          utterance.voice = voice;
+          this.activeVoiceName = voice.name;
+        }
+
+        utterance.onstart = () => {
+          if (onStart) onStart();
+        };
+
+        utterance.onend = () => {
+          if (onEnd) onEnd();
+        };
+
+        utterance.onerror = () => {
+          if (onEnd) onEnd();
+        };
+
+        window.speechSynthesis.speak(utterance);
+      }
+    };
+
+    function testBritishVoice() {
+      audioSynth.playPop();
+      showToast("British Voice: 'Splendid! Lovely to meet you.'", "🇬🇧");
+      speechEngine.speak({
+        text: "Splendid! Lovely to meet you."
+      });
+    }
+
+    // State Variables
+    let currentScore = 0;
+    let quizStreak = 0;
+    let quizIndex = 0;
+    let quizQuestions = [];
+    let activeQuizItem = null;
+
+    // Match State
+    let matchSelectedWord = null;
+    let matchSelectedImage = null;
+    let matchedPairsCount = 0;
+
+    // Spelling State
+    let currentSpellIndex = 0;
+    let currentSpellTarget = null;
+    let spelledLetters = [];
+
+    // Render Explorer Cards in pure English
+    function renderExploreCards() {
+      const grid = document.getElementById('cardsGrid');
+      grid.innerHTML = '';
+
+      VOCABULARY.forEach(item => {
+        const card = document.createElement('div');
+        card.id = `card-${item.id}`;
+        card.className = "bg-white rounded-3xl p-5 shadow-lg border border-slate-100 hover:shadow-2xl transition-all duration-300 flex flex-col justify-between group hover:-translate-y-1 relative overflow-hidden";
+
+        card.innerHTML = `
+          <!-- Category Tag & Sound Wave -->
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[11px] font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-full uppercase tracking-wider">
+              ${item.category}
+            </span>
+            <div id="soundWave-${item.id}" class="sound-bars-wave opacity-0 transition-opacity">
+              <span class="sound-bar"></span>
+              <span class="sound-bar"></span>
+              <span class="sound-bar"></span>
+              <span class="sound-bar"></span>
+            </div>
+          </div>
+
+          <!-- Illustration Area (Direct Tap to Pronounce & Sync) -->
+          <div onclick="playSingleWordSync('${item.id}')" class="w-full h-44 bg-gradient-to-b from-slate-50 to-indigo-50/40 rounded-2xl p-2 flex items-center justify-center cursor-pointer transition-transform group-hover:scale-105 btn-bounce" title="Click to hear pronunciation">
+            ${item.svg}
+          </div>
+
+          <!-- English Word Banner with Live Karaoke Highlight -->
+          <div class="mt-4">
+            <div onclick="playSingleWordSync('${item.id}')" class="flex items-center justify-between bg-slate-50 hover:bg-indigo-50/60 p-3 rounded-2xl border border-slate-100 transition cursor-pointer">
+              <span id="badge-${item.id}" class="font-heading font-black text-2xl text-slate-800 px-3 py-1 rounded-xl border border-transparent transition-all">
+                ${item.word}
+              </span>
+              <button class="p-2.5 rounded-xl bg-white shadow-sm hover:bg-indigo-100 text-indigo-600 transition btn-bounce" title="Listen">
+                🔊
+              </button>
+            </div>
+          </div>
+
+          <!-- Phonics Breakdown & Description -->
+          <div class="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+            <span class="truncate max-w-[170px]" title="${item.funFact}">${item.funFact}</span>
+            <button onclick="playPhonicsSync('${item.id}')" class="text-indigo-600 font-bold hover:underline flex items-center gap-1 shrink-0 px-2 py-1 rounded-lg hover:bg-indigo-50 transition" title="Listen to syllables">
+              <span>🗣️ Phonics</span>
+            </button>
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+    }
+
+    // Helper functions for visual glow
+    function activateWordBadge(badgeId, waveId) {
+      const badge = document.getElementById(badgeId);
+      if (badge) badge.classList.add('word-highlight-active');
+      if (waveId) {
+        const wave = document.getElementById(waveId);
+        if (wave) wave.classList.remove('opacity-0');
+      }
+    }
+
+    function deactivateWordBadge(badgeId, waveId) {
+      const badge = document.getElementById(badgeId);
+      if (badge) badge.classList.remove('word-highlight-active');
+      if (waveId) {
+        const wave = document.getElementById(waveId);
+        if (wave) wave.classList.add('opacity-0');
+      }
+    }
+
+    // Play English word with live highlighting
+    function playSingleWordSync(itemId, onComplete) {
+      audioSynth.playClick();
+      const item = VOCABULARY.find(v => v.id === itemId);
+      if (!item) return;
+
+      const badgeId = `badge-${itemId}`;
+      const waveId = `soundWave-${itemId}`;
+
+      speechEngine.speak({
+        text: item.word,
+        onStart: () => {
+          activateWordBadge(badgeId, waveId);
+        },
+        onEnd: () => {
+          deactivateWordBadge(badgeId, waveId);
+          if (onComplete) onComplete();
+        }
+      });
+    }
+
+    // Phonics Syllables Breakdown Sequence
+    function playPhonicsSync(itemId) {
+      const item = VOCABULARY.find(v => v.id === itemId);
+      if (!item) return;
+
+      audioSynth.playPop();
+      const syllables = item.phonics;
+      let currentIndex = 0;
+
+      const speakNextSyllable = () => {
+        if (currentIndex >= syllables.length) {
+          // Speak full word to finalize
+          setTimeout(() => playSingleWordSync(itemId), 250);
+          return;
+        }
+
+        const syl = syllables[currentIndex];
+        showToast(`Syllable: ${syl.toUpperCase()}`, '🗣️');
+        activateWordBadge(`badge-${itemId}`, `soundWave-${itemId}`);
+
+        speechEngine.speak({
+          text: syl,
+          onEnd: () => {
+            deactivateWordBadge(`badge-${itemId}`, `soundWave-${itemId}`);
+            currentIndex++;
+            setTimeout(speakNextSyllable, 300);
+          }
+        });
+      };
+
+      speakNextSyllable();
+    }
+
+    // Play all cards one after another
+    function playAllWordsSequentially() {
+      const btn = document.getElementById('playAllBtn');
+      btn.disabled = true;
+      btn.classList.add('opacity-50');
+
+      let idx = 0;
+      function nextCard() {
+        if (idx >= VOCABULARY.length) {
+          btn.disabled = false;
+          btn.classList.remove('opacity-50');
+          showToast("Great job listening to all words!", "🎉");
+          fireConfetti();
+          return;
+        }
+        const item = VOCABULARY[idx];
+        const cardElem = document.getElementById(`card-${item.id}`);
+        if (cardElem) cardElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        playSingleWordSync(item.id, () => {
+          idx++;
+          setTimeout(nextCard, 500);
+        });
+      }
+      nextCard();
+    }
+
+    // Listening Quiz Logic
+    function startQuizMode() {
+      quizQuestions = [...VOCABULARY].sort(() => Math.random() - 0.5);
+      quizIndex = 0;
+      document.getElementById('quizTotalQuestions').textContent = quizQuestions.length;
+      loadQuizQuestion();
+    }
+
+    function loadQuizQuestion() {
+      if (quizIndex >= quizQuestions.length) {
+        showQuizVictory();
+        return;
+      }
+
+      activeQuizItem = quizQuestions[quizIndex];
+      document.getElementById('quizQuestionNum').textContent = quizIndex + 1;
+      document.getElementById('quizStreakBadge').textContent = `🔥 Streak: ${quizStreak}`;
+      document.getElementById('quizFeedback').innerHTML = '';
+
+      // Prompt display
+      const promptDisplay = document.getElementById('quizPromptDisplay');
+      promptDisplay.innerHTML = `
+        <span id="quizWordGlow" class="px-5 py-2 rounded-2xl bg-slate-100 text-indigo-700 font-heading font-black text-3xl tracking-wide transition-all inline-block">
+          ${activeQuizItem.word}
+        </span>
+      `;
+
+      // 4 choices (1 correct + 3 random)
+      const wrongOptions = VOCABULARY.filter(v => v.id !== activeQuizItem.id)
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 3);
+
+      const options = [activeQuizItem, ...wrongOptions].sort(() => Math.random() - 0.5);
+
+      const grid = document.getElementById('quizOptionsGrid');
+      grid.innerHTML = '';
+
+      options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = "quiz-opt-btn bg-slate-50 hover:bg-indigo-50/70 p-4 rounded-3xl border-2 border-slate-200 hover:border-indigo-400 transition-all duration-200 flex flex-col items-center justify-center gap-2 group btn-bounce";
+        btn.onclick = () => handleQuizAnswer(opt.id, btn);
+        btn.innerHTML = `
+          <div class="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center group-hover:scale-105 transition-transform pointer-events-none">
+            ${opt.svg}
+          </div>
+        `;
+        grid.appendChild(btn);
+      });
+
+      // Automatically play sound
+      setTimeout(() => repeatQuizAudio(), 350);
+    }
+
+    function repeatQuizAudio() {
+      if (!activeQuizItem) return;
+      audioSynth.playTone(700, 'sine', 0.08);
+
+      const glowWord = document.getElementById('quizWordGlow');
+      speechEngine.speak({
+        text: activeQuizItem.word,
+        onStart: () => {
+          if (glowWord) glowWord.classList.add('word-highlight-active');
+        },
+        onEnd: () => {
+          if (glowWord) glowWord.classList.remove('word-highlight-active');
+        }
+      });
+    }
+
+    function handleQuizAnswer(selectedId, btnElement) {
+      if (!activeQuizItem) return;
+
+      const isCorrect = selectedId === activeQuizItem.id;
+      const feedback = document.getElementById('quizFeedback');
+      const buttons = document.querySelectorAll('.quiz-opt-btn');
+
+      buttons.forEach(b => b.disabled = true);
+
+      if (isCorrect) {
+        audioSynth.playCorrect();
+        btnElement.classList.remove('border-slate-200', 'bg-slate-50');
+        btnElement.classList.add('border-emerald-500', 'bg-emerald-50', 'ring-4', 'ring-emerald-200');
+
+        feedback.innerHTML = `<span class="text-emerald-600 font-heading font-black flex items-center justify-center gap-2">🎉 Awesome! "${activeQuizItem.word.toUpperCase()}" is correct!</span>`;
+        
+        addScore(10);
+        quizStreak++;
+        fireConfetti(0.3);
+
+        speechEngine.speak({
+          text: `Awesome! ${activeQuizItem.word}`,
+          onEnd: () => {
+            setTimeout(() => {
+              quizIndex++;
+              loadQuizQuestion();
+            }, 600);
+          }
+        });
+
+      } else {
+        audioSynth.playWrong();
+        btnElement.classList.remove('border-slate-200', 'bg-slate-50');
+        btnElement.classList.add('border-rose-500', 'bg-rose-50', 'shake-anim');
+
+        feedback.innerHTML = `<span class="text-rose-600 font-bold">Try again! Listen closely to the word</span>`;
+        quizStreak = 0;
+        document.getElementById('quizStreakBadge').textContent = `🔥 Streak: 0`;
+
+        setTimeout(() => {
+          btnElement.classList.remove('border-rose-500', 'bg-rose-50', 'shake-anim');
+          btnElement.classList.add('border-slate-200', 'bg-slate-50');
+          buttons.forEach(b => b.disabled = false);
+        }, 1000);
+      }
+    }
+
+    function showQuizVictory() {
+      const grid = document.getElementById('quizOptionsGrid');
+      grid.innerHTML = '';
+      document.getElementById('quizPromptDisplay').innerHTML = '';
+      document.getElementById('quizFeedback').innerHTML = `
+        <div class="p-6 bg-amber-50 rounded-3xl border-2 border-amber-300">
+          <div class="text-5xl mb-3">🏆</div>
+          <h3 class="text-2xl font-black text-amber-900 font-heading">You Are an English Word Master!</h3>
+          <p class="text-slate-600 text-sm mt-1">You identified all English words with pristine listening accuracy!</p>
+          <button onclick="startQuizMode()" class="mt-4 px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow-lg hover:bg-indigo-700 transition btn-bounce">
+            Play Again 🔄
+          </button>
+        </div>
+      `;
+      fireConfetti(1.0);
+    }
+
+    // Matching Game Setup
+    function initMatchGame() {
+      matchedPairsCount = 0;
+      matchSelectedWord = null;
+      matchSelectedImage = null;
+      document.getElementById('matchSummary').classList.add('hidden');
+
+      const wordsCol = document.getElementById('matchWordsCol');
+      const imagesCol = document.getElementById('matchImagesCol');
+      wordsCol.innerHTML = '';
+      imagesCol.innerHTML = '';
+
+      const wordsList = [...VOCABULARY].sort(() => Math.random() - 0.5);
+      const imagesList = [...VOCABULARY].sort(() => Math.random() - 0.5);
+
+      wordsList.forEach(item => {
+        const div = document.createElement('div');
+        div.id = `match-word-${item.id}`;
+        div.className = "match-word-card p-4 bg-slate-50 hover:bg-indigo-50/80 rounded-2xl border-2 border-slate-200 cursor-pointer transition flex items-center justify-between btn-bounce";
+        div.onclick = () => selectMatchWord(item.id);
+        div.innerHTML = `
+          <div class="flex items-center gap-3">
+            <span class="w-3.5 h-3.5 rounded-full bg-slate-300 indicator-dot"></span>
+            <span class="font-heading font-black text-slate-800 text-xl tracking-wide">${item.word}</span>
+          </div>
+          <button onclick="event.stopPropagation(); playSingleWordSync('${item.id}')" class="text-indigo-600 hover:text-indigo-800 p-1.5 text-lg" title="Listen">
+            🔊
+          </button>
+        `;
+        wordsCol.appendChild(div);
+      });
+
+      imagesList.forEach(item => {
+        const div = document.createElement('div');
+        div.id = `match-img-${item.id}`;
+        div.className = "match-img-card p-3 bg-slate-50 hover:bg-indigo-50/80 rounded-2xl border-2 border-slate-200 cursor-pointer transition flex items-center justify-between btn-bounce";
+        div.onclick = () => selectMatchImage(item.id);
+        div.innerHTML = `
+          <div class="flex items-center gap-4">
+            <span class="w-3.5 h-3.5 rounded-full bg-slate-300 indicator-dot"></span>
+            <div class="w-16 h-16 pointer-events-none">
+              ${item.svg}
+            </div>
+          </div>
+          <span class="text-xs text-slate-400 font-bold px-2">Tap to match</span>
+        `;
+        imagesCol.appendChild(div);
+      });
+    }
+
+    function selectMatchWord(id) {
+      if (matchSelectedWord === id) return;
+      audioSynth.playClick();
+
+      if (matchSelectedWord) {
+        const prev = document.getElementById(`match-word-${matchSelectedWord}`);
+        if (prev) prev.classList.remove('border-indigo-600', 'bg-indigo-50', 'ring-2', 'ring-indigo-300');
+      }
+
+      matchSelectedWord = id;
+      const el = document.getElementById(`match-word-${id}`);
+      if (el) el.classList.add('border-indigo-600', 'bg-indigo-50', 'ring-2', 'ring-indigo-300');
+
+      // Pronounce English word automatically
+      const item = VOCABULARY.find(v => v.id === id);
+      if (item) {
+        speechEngine.speak({ text: item.word });
+      }
+
+      checkMatchPair();
+    }
+
+    function selectMatchImage(id) {
+      if (matchSelectedImage === id) return;
+      audioSynth.playClick();
+
+      if (matchSelectedImage) {
+        const prev = document.getElementById(`match-img-${matchSelectedImage}`);
+        if (prev) prev.classList.remove('border-indigo-600', 'bg-indigo-50', 'ring-2', 'ring-indigo-300');
+      }
+
+      matchSelectedImage = id;
+      const el = document.getElementById(`match-img-${id}`);
+      if (el) el.classList.add('border-indigo-600', 'bg-indigo-50', 'ring-2', 'ring-indigo-300');
+
+      checkMatchPair();
+    }
+
+    function checkMatchPair() {
+      if (!matchSelectedWord || !matchSelectedImage) return;
+
+      const wordElem = document.getElementById(`match-word-${matchSelectedWord}`);
+      const imgElem = document.getElementById(`match-img-${matchSelectedImage}`);
+
+      if (matchSelectedWord === matchSelectedImage) {
+        // Matched
+        audioSynth.playCorrect();
+        addScore(15);
+        matchedPairsCount++;
+
+        wordElem.classList.remove('border-indigo-600', 'bg-indigo-50', 'ring-2', 'ring-indigo-300');
+        imgElem.classList.remove('border-indigo-600', 'bg-indigo-50', 'ring-2', 'ring-indigo-300');
+
+        wordElem.classList.add('bg-emerald-50', 'border-emerald-500', 'pointer-events-none', 'opacity-90');
+        imgElem.classList.add('bg-emerald-50', 'border-emerald-500', 'pointer-events-none', 'opacity-90');
+
+        wordElem.querySelector('.indicator-dot').classList.replace('bg-slate-300', 'bg-emerald-500');
+        imgElem.querySelector('.indicator-dot').classList.replace('bg-slate-300', 'bg-emerald-500');
+
+        showToast("Perfect Match!", "🌟");
+
+        matchSelectedWord = null;
+        matchSelectedImage = null;
+
+        if (matchedPairsCount >= VOCABULARY.length) {
+          fireConfetti();
+          document.getElementById('matchSummary').classList.remove('hidden');
+        }
+
+      } else {
+        // Mismatch
+        audioSynth.playWrong();
+        showToast("Try again! Those two don't match", "❌");
+
+        wordElem.classList.add('border-rose-400', 'bg-rose-50');
+        imgElem.classList.add('border-rose-400', 'bg-rose-50');
+
+        setTimeout(() => {
+          wordElem.classList.remove('border-rose-400', 'bg-rose-50', 'border-indigo-600', 'ring-2', 'ring-indigo-300');
+          imgElem.classList.remove('border-rose-400', 'bg-rose-50', 'border-indigo-600', 'ring-2', 'ring-indigo-300');
+          matchSelectedWord = null;
+          matchSelectedImage = null;
+        }, 750);
+      }
+    }
+
+    function resetMatchGame() {
+      audioSynth.playPop();
+      initMatchGame();
+    }
+
+    // Spelling Bee Activity
+    function initSpellingMode() {
+      currentSpellIndex = 0;
+      loadSpellingItem();
+    }
+
+    function loadSpellingItem() {
+      currentSpellTarget = VOCABULARY[currentSpellIndex];
+      spelledLetters = [];
+
+      // Illustration
+      document.getElementById('spellingImageContainer').innerHTML = currentSpellTarget.svg;
+
+      // Letters array (ignoring whitespace for slots)
+      const cleanWord = currentSpellTarget.word.replace(/\s+/g, '').toUpperCase();
+      const letters = cleanWord.split('');
+
+      // Slots
+      const slotsContainer = document.getElementById('spellingSlotsContainer');
+      slotsContainer.innerHTML = '';
+      letters.forEach((_, idx) => {
+        const slot = document.createElement('div');
+        slot.id = `spell-slot-${idx}`;
+        slot.className = "w-12 h-14 bg-white rounded-2xl border-2 border-slate-300 flex items-center justify-center text-2xl font-heading font-black text-slate-800 shadow-sm transition-all";
+        slotsContainer.appendChild(slot);
+      });
+
+      // Scrambled letters
+      const scrambled = [...letters].sort(() => Math.random() - 0.5);
+      const pool = document.getElementById('spellingLetterPool');
+      pool.innerHTML = '';
+
+      scrambled.forEach((char) => {
+        const tile = document.createElement('button');
+        tile.className = "spell-letter-btn w-12 h-14 bg-gradient-to-t from-indigo-500 to-indigo-600 text-white font-heading font-black text-2xl rounded-2xl shadow-md hover:scale-105 btn-bounce flex items-center justify-center border-b-4 border-indigo-800";
+        tile.textContent = char;
+        tile.onclick = () => tapSpellLetter(char, tile);
+        pool.appendChild(tile);
+      });
+
+      speakSpellingTarget();
+    }
+
+    function speakSpellingTarget() {
+      if (!currentSpellTarget) return;
+      speechEngine.speak({ text: currentSpellTarget.word });
+    }
+
+    function tapSpellLetter(letter, btn) {
+      if (!currentSpellTarget) return;
+      const cleanWord = currentSpellTarget.word.replace(/\s+/g, '').toUpperCase();
+      const expectedChar = cleanWord[spelledLetters.length];
+
+      audioSynth.playPop();
+
+      if (letter === expectedChar) {
+        audioSynth.playTone(720, 'triangle', 0.1);
+        const slot = document.getElementById(`spell-slot-${spelledLetters.length}`);
+        if (slot) {
+          slot.textContent = letter;
+          slot.classList.replace('border-slate-300', 'border-emerald-500');
+          slot.classList.add('bg-emerald-50', 'text-emerald-700', 'animate-bounce');
+        }
+
+        spelledLetters.push(letter);
+        btn.classList.add('opacity-25', 'pointer-events-none');
+
+        // Completed word
+        if (spelledLetters.length === cleanWord.length) {
+          audioSynth.playCorrect();
+          addScore(20);
+          showToast(`Great spelling! "${cleanWord}"`, "🎉");
+          fireConfetti(0.4);
+
+          speakSpellingTarget();
+
+          setTimeout(() => {
+            nextSpellingWord();
+          }, 1400);
+        }
+
+      } else {
+        // Wrong letter
+        audioSynth.playWrong();
+        btn.classList.add('bg-rose-500', 'border-rose-700');
+        setTimeout(() => {
+          btn.classList.remove('bg-rose-500', 'border-rose-700');
+        }, 400);
+        showToast("Not that letter! Keep trying", "⚠️");
+      }
+    }
+
+    function resetCurrentSpelling() {
+      audioSynth.playClick();
+      loadSpellingItem();
+    }
+
+    function nextSpellingWord() {
+      currentSpellIndex = (currentSpellIndex + 1) % VOCABULARY.length;
+      loadSpellingItem();
+    }
+
+    // Tab switching
+    function switchTab(tabId) {
+      audioSynth.playClick();
+
+      document.querySelectorAll('.tab-view').forEach(view => view.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-indigo-600', 'text-white', 'shadow-lg');
+        btn.classList.add('bg-white', 'text-slate-600');
+      });
+
+      const activeView = document.getElementById(`view-${tabId}`);
+      const activeBtn = document.getElementById(`tab-${tabId}`);
+
+      if (activeView) activeView.classList.remove('hidden');
+      if (activeBtn) {
+        activeBtn.classList.remove('bg-white', 'text-slate-600');
+        activeBtn.classList.add('bg-indigo-600', 'text-white', 'shadow-lg');
+      }
+
+      if (tabId === 'quiz') startQuizMode();
+      if (tabId === 'match') initMatchGame();
+      if (tabId === 'spelling') initSpellingMode();
+    }
+
+    function addScore(pts) {
+      currentScore += pts;
+      const scoreEl = document.getElementById('scoreDisplay');
+      scoreEl.textContent = currentScore;
+      scoreEl.classList.add('scale-125', 'text-amber-500');
+      setTimeout(() => scoreEl.classList.remove('scale-125', 'text-amber-500'), 250);
+    }
+
+    function showToast(message, icon = "✨") {
+      const toast = document.getElementById('toastNotification');
+      document.getElementById('toastMsg').textContent = message;
+      document.getElementById('toastIcon').textContent = icon;
+
+      toast.classList.remove('translate-y-32', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      clearTimeout(toast._timeout);
+      toast._timeout = setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-32', 'opacity-0');
+      }, 2400);
+    }
+
+    function fireConfetti(ratio = 0.5) {
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: Math.floor(70 * ratio),
+          spread: 70,
+          origin: { y: 0.7 }
+        });
+      }
+    }
+
+    // Sound toggle
+    const sfxBtn = document.getElementById('sfxToggleBtn');
+    sfxBtn.addEventListener('click', () => {
+      audioSynth.enabled = !audioSynth.enabled;
+      document.getElementById('sfxIcon').textContent = audioSynth.enabled ? '🔔' : '🔕';
+      showToast(audioSynth.enabled ? "Sound effects on" : "Sound effects muted", "🔊");
+    });
+
+    // Window Onload
+    window.onload = function() {
+      speechEngine.init();
+      renderExploreCards();
+
+      setTimeout(() => {
+        showToast("British female voice active 🇬🇧 Tap any card to listen!", "🎙️");
+      }, 600);
+    };
+  </script>
+</body>
+</html>
